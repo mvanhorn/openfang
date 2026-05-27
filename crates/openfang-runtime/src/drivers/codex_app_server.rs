@@ -389,6 +389,19 @@ impl CodexAppServerDriver {
         request: CompletionRequest,
         tx: Option<tokio::sync::mpsc::Sender<StreamEvent>>,
     ) -> Result<CompletionResponse, LlmError> {
+        // Driver declares supports_tools: false in the catalog. If a caller
+        // still passes tools, surface that loudly rather than silently
+        // dropping them and producing text-only output the caller didn't ask
+        // for.
+        if !request.tools.is_empty() {
+            tracing::warn!(
+                tools_dropped = request.tools.len(),
+                model = %request.model,
+                "codex_app_server driver does not support tools; ignoring \
+                 {n} tool(s) in this request",
+                n = request.tools.len()
+            );
+        }
         let timeout = std::time::Duration::from_secs(self.message_timeout_secs);
         let result = tokio::time::timeout(timeout, self.run_turn_inner(request, tx)).await;
         match result {

@@ -90,7 +90,19 @@ fn download_base_url(api_listen: &str) -> String {
     let listen = api_listen
         .replacen("0.0.0.0", "127.0.0.1", 1)
         .replacen("[::]", "127.0.0.1", 1);
-    format!("http://{listen}")
+    let url = format!("http://{listen}");
+    // The 127.0.0.1 fallback works for the CLI channel but is useless for
+    // remote-recipient channels (Telegram, web). Warn once when we fall back
+    // so the operator knows to set OPENFANG_URL before enabling those
+    // channels. Using `warn!` (not error!) because the CLI channel works
+    // fine with this default; the warning is for remote-channel readiness.
+    tracing::warn!(
+        url = %url,
+        "OPENFANG_URL not set; remote channels (Telegram, web) will receive \
+         download links pointing at the daemon's loopback address. Set \
+         OPENFANG_URL to your public URL before enabling them."
+    );
+    url
 }
 
 fn encode_path(path: &str) -> String {

@@ -237,7 +237,15 @@ fn estimate_cost_rates(model: &str) -> (f64, f64) {
     // Codex app-server uses ChatGPT subscription auth via the Codex CLI. Keep
     // usage events visible while leaving per-token cost at zero for flat-rate
     // subscription billing.
-    if model.contains("codex_app_server") || model.contains("codex-app-server") {
+    //
+    // Match only the canonical provider id forms (with optional model suffix
+    // separated by '/'). Substring `.contains` would zero-cost a user-named
+    // model like `my-codex_app_server-eval`.
+    if model == "codex_app_server"
+        || model == "codex-app-server"
+        || model.starts_with("codex_app_server/")
+        || model.starts_with("codex-app-server/")
+    {
         return (0.0, 0.0);
     }
 
